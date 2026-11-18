@@ -56,6 +56,27 @@ on entities (avoids recursion in bidirectional associations).
 | Reservation 1 — 0..1 Contrat | `contrat.reservation_id_reservation` (unique) | LAZY | ALL (Reservation side) |
 | Vehicule 1 — * Maintenance | `maintenance.vehicule_id_vehicule` | LAZY | PERSIST |
 
+### Checking the database
+
+Connect any MySQL client (MySQL Workbench, DBeaver…) to `localhost:3306`, database `autoloc_db`:
+
+```sql
+SHOW TABLES;
+DESCRIBE vehicule;
+```
+
+The application creates the tables but no data. To try the associations with some rows, run
+[`docs/sample-data.sql`](autoloc-api/docs/sample-data.sql) (one agency, two vehicles, a client,
+a reservation, its contract and two payments).
+
+**Tables generated in `autoloc_db`**
+
+![autoloc_db tables](autoloc-api/docs/screenshots/06-database-tables.png)
+
+**`vehicule` table with the sample data (columns, types and the `agence_id_agence` foreign key)**
+
+![vehicule data](autoloc-api/docs/screenshots/07-vehicule-data.png)
+
 ## Spring Security — test results
 
 Accounts (classroom only): `student` / `student123` (role USER), `admin` / `admin123` (role ADMIN). HTTP Basic.
