@@ -40,6 +40,85 @@ on entities (avoids recursion in bidirectional associations).
 
 ## Generated database schema
 
+```mermaid
+erDiagram
+    AGENCE ||--o{ VEHICULE : "possede"
+    AGENCE ||--o{ EMPLOYE : "emploie"
+    VEHICULE }o--o{ EQUIPEMENT : "vehicule_equipement"
+    VEHICULE ||--o{ MAINTENANCE : "subit"
+    CLIENT ||--o{ RESERVATION : "effectue"
+    VEHICULE ||--o{ RESERVATION : "concerne"
+    RESERVATION ||--o| CONTRAT : "donne lieu a"
+    CONTRAT ||--|{ PAIEMENT : "compose de"
+
+    AGENCE {
+        bigint id_agence PK
+        varchar nom
+        varchar ville
+        varchar adresse
+        varchar telephone
+    }
+    VEHICULE {
+        bigint id_vehicule PK
+        varchar immatriculation UK
+        varchar marque
+        varchar modele
+        enum categorie
+        decimal tarif_journalier
+        enum statut
+        bigint agence_id_agence FK
+    }
+    EMPLOYE {
+        bigint id_employe PK
+        varchar nom
+        varchar prenom
+        enum role
+        bigint agence_id_agence FK
+    }
+    EQUIPEMENT {
+        bigint id_equipement PK
+        varchar libelle UK
+    }
+    MAINTENANCE {
+        bigint id_maintenance PK
+        date date_debut
+        date date_fin
+        varchar description
+        bigint vehicule_id_vehicule FK
+    }
+    CLIENT {
+        bigint id_client PK
+        varchar nom
+        varchar prenom
+        varchar email UK
+        varchar telephone
+        varchar num_permis UK
+        date date_inscription
+    }
+    RESERVATION {
+        bigint id_reservation PK
+        date date_debut
+        date date_fin
+        enum statut
+        bigint client_id_client FK
+        bigint vehicule_id_vehicule FK
+    }
+    CONTRAT {
+        bigint id_contrat PK
+        date date_signature
+        decimal montant_total
+        boolean valide
+        bigint reservation_id_reservation FK
+    }
+    PAIEMENT {
+        bigint id_paiement PK
+        decimal montant
+        date date_paiement
+        enum mode_paiement
+        bigint contrat_id_contrat FK
+    }
+```
+
 9 entity tables + 1 join table:
 
 `agence`, `client`, `contrat`, `employe`, `equipement`, `maintenance`, `paiement`, `reservation`,
