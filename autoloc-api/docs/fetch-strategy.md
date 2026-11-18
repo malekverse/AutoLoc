@@ -16,14 +16,40 @@ Cascades are only used when the child has no lifecycle of its own.
 | Reservation ↔ Contrat | `@OneToOne`; `Contrat` owns FK `reservation_id_reservation` (unique); `Reservation` is the `mappedBy` side | LAZY | ALL (on the Reservation side) | A contract is the result of a reservation (1 — 0..1). Saving/deleting a reservation propagates to its contract. Note: on the inverse (`mappedBy`) side Hibernate can't proxy a nullable one-to-one, so `LAZY` there is only a hint unless bytecode enhancement is enabled. |
 | Vehicule → Maintenance | `@OneToMany(mappedBy = "vehicule")` / `@ManyToOne`; `Maintenance` owns FK `vehicule_id_vehicule` | LAZY | PERSIST | A maintenance can be created through its vehicle. No REMOVE: the maintenance history is kept for traceability. |
 
+## Guided steps — Contrat ↔ Paiement
+
+**Step 1 — unidirectional `Paiement → Contrat`.** With only `@ManyToOne private Contrat contrat;`
+in `Paiement`, Hibernate generates:
+
+```sql
+alter table paiement add column contrat_id_contrat bigint;
+alter table paiement add constraint FK... foreign key (contrat_id_contrat) references contrat (id_contrat);
+```
+
+The exact column name is **`contrat_id_contrat`** (property name + `_` + referenced id column).
+A payment can navigate to its contract because `Paiement` holds the reference (and the FK). A
+contract cannot navigate to its payments yet because `Contrat` has no field pointing back: at
+that stage the association only exists in one direction in the Java model.
+
+**Step 2 — bidirectional with `mappedBy`.** Adding
+`@OneToMany(mappedBy = "contrat") List<Paiement> paiements` to `Contrat` generates **no new
+DDL**: no extra column, no join table. `mappedBy = "contrat"` must match the field name in
+`Paiement` exactly; it tells Hibernate that the collection is the inverse side of the existing FK.
+Without `mappedBy`, Hibernate would treat it as a second, independent association and create a
+`contrat_paiements` join table.
+
+**Step 3 — cascade.** `cascade = CascadeType.ALL` + `orphanRemoval = true`: saving a contract
+saves its new payments, deleting it deletes them, and removing a payment from the list deletes
+the row.
+
 ## LAZY vs EAGER comparison (Contrat → Paiement)
 
 - **LAZY**: `contratRepository.findById(id)` runs a single `select … from contrat`. The `paiement`
   table is only queried when `getPaiements()` is accessed inside an open persistence context;
   outside it you get a `LazyInitializationException`.
-- **EAGER** (temporary test): the same call also loads the payments (an extra select or a
-  join) every time a contract is read, even when the payments are not used.
-- **Final choice**: LAZY restored.
+- **EAGER**: the same call also loads the payments (a `left join paiement` or a second select)
+  every time a contract is read, even when the payments are not used.
+- **Final choice**: LAZY.
 
 ## Keeping both sides in sync
 
